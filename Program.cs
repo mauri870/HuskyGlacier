@@ -21,6 +21,10 @@ namespace Pumpt
         private static Computer computer;
         private static System.Windows.Forms.Timer updateTimer;
 
+        // Cache CPU sensor once
+        private static ISensor cpuTempSensor;
+        private static IHardware cpuHardware;
+
         // Temperature values
         private static float currentCpuTemp = 0;
         private static float previousCpuTemp = -1; // Track previous temp to avoid unnecessary icon updates
@@ -92,6 +96,15 @@ namespace Pumpt
                 IsMotherboardEnabled = true
             };
             computer.Open();
+
+            cpuHardware = computer.Hardware
+                .FirstOrDefault(h => h.HardwareType == HardwareType.Cpu);
+
+            cpuHardware?.Update();
+
+            cpuTempSensor = cpuHardware?.Sensors
+                .FirstOrDefault(s => s.SensorType == SensorType.Temperature &&
+                                     (s.Name.Contains("Tctl") || s.Name.Contains("CPU")));
         }
 
         private static void InitializeHidDevice()
@@ -154,21 +167,9 @@ namespace Pumpt
         {
             try
             {
-                foreach (var hardware in computer.Hardware)
-                    hardware.Update();
-
-                // Get CPU temperature (original logic)
-                var cpuTemp = computer.Hardware
-                    .SelectMany(hw => hw.Sensors)
-                    .FirstOrDefault(s => s.SensorType == SensorType.Temperature &&
-                               s.Value.HasValue && s.Value.Value > 0 &&
-                               (s.Name.Contains("Tctl") || s.Name.Contains("CPU")))?.Value;
-
-                // Update CPU temperature
-                if (cpuTemp.HasValue)
-                {
-                    currentCpuTemp = cpuTemp.Value;
-                }
+                cpuHardware?.Update();
+                if (cpuTempSensor?.Value is float temp)
+                    currentCpuTemp = temp;
 
                 displayTemp = $"CPU: {currentCpuTemp:F0}°C";
                 trayIcon.Text = displayTemp;
@@ -188,15 +189,6 @@ namespace Pumpt
             {
                 displayTemp = "Error reading temperatures";
                 trayIcon.Text = $"Pumpt - Error: {ex.Message}";
-
-                // Show error icon only if not already showing error
-                if (previousCpuTemp != -999) // Use -999 as error state marker
-                {
-                    var oldIcon = trayIcon.Icon;
-                    trayIcon.Icon = CreateTempIcon("!!", Color.Red, 11, "Segoe UI");
-                    oldIcon?.Dispose();
-                    previousCpuTemp = -999;
-                }
             }
         }
 
