@@ -21,6 +21,7 @@ namespace Pumpt
 
         // Temperature values
         private static float currentCpuTemp = 0;
+        private static float previousCpuTemp = -1; // Track previous temp to avoid unnecessary icon updates
         private static string displayTemp = "N/A";
 
         // Device VID and PID for Husky Glacier cooler
@@ -156,22 +157,30 @@ namespace Pumpt
                 displayTemp = $"CPU: {currentCpuTemp:F0}°C";
                 trayIcon.Text = displayTemp;
 
-                // Update icon with current temperature and color
-                var oldIcon = trayIcon.Icon;
-                string tempText = $"{currentCpuTemp:F0}";
-                Color tempColor = GetTempColor(currentCpuTemp);
-                trayIcon.Icon = CreateTempIcon(tempText, tempColor, 11, "Segoe UI");
-                oldIcon?.Dispose();
+                // Only update icon if temperature changed by at least 1 degree
+                if (Math.Abs(currentCpuTemp - previousCpuTemp) >= 1.0f)
+                {
+                    var oldIcon = trayIcon.Icon;
+                    string tempText = $"{currentCpuTemp:F0}";
+                    Color tempColor = GetTempColor(currentCpuTemp);
+                    trayIcon.Icon = CreateTempIcon(tempText, tempColor, 11, "Segoe UI");
+                    oldIcon?.Dispose();
+                    previousCpuTemp = currentCpuTemp;
+                }
             }
             catch (Exception ex)
             {
                 displayTemp = "Error reading temperatures";
                 trayIcon.Text = $"Pumpt - Error: {ex.Message}";
 
-                // Show error icon
-                var oldIcon = trayIcon.Icon;
-                trayIcon.Icon = CreateTempIcon("!!", Color.Red, 11, "Segoe UI");
-                oldIcon?.Dispose();
+                // Show error icon only if not already showing error
+                if (previousCpuTemp != -999) // Use -999 as error state marker
+                {
+                    var oldIcon = trayIcon.Icon;
+                    trayIcon.Icon = CreateTempIcon("!!", Color.Red, 11, "Segoe UI");
+                    oldIcon?.Dispose();
+                    previousCpuTemp = -999;
+                }
             }
         }
 
@@ -223,15 +232,16 @@ namespace Pumpt
             float scaledFontSize = baseFontSize * dpiScale;
 
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             g.Clear(Color.Transparent);
 
-            using var font = new Font(fontFamily, scaledFontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-            SizeF textSize = g.MeasureString(text, font);
-            float x = (iconSize.Width - textSize.Width) / 2;
-            float y = (iconSize.Height - textSize.Height) / 2 + (dpiScale * 0.5f);
-
-            using (var brush = new SolidBrush(color))
+            using (var font = new Font(fontFamily, scaledFontSize, FontStyle.Bold, GraphicsUnit.Pixel))
             {
+                SizeF textSize = g.MeasureString(text, font);
+                float x = (iconSize.Width - textSize.Width) / 2;
+                float y = (iconSize.Height - textSize.Height) / 2 + (dpiScale * 0.5f);
+
+                using var brush = new SolidBrush(color);
                 g.DrawString(text, font, brush, new PointF(x, y));
             }
 
