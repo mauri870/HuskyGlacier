@@ -15,6 +15,6 @@ I was only able to test the app with the **HWT700PT** model. Other Husky Glacier
 You need dotnet 10.0 SDK to build and run the app, it also requires administrative privileges to gather sensor data.
 
 ```powershell
-dotnet run
-dotnet publish --self-contained
+dotnet run # For development
+dotnet publish --self-contained # build + dotnet runtime
 ```

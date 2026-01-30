@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Principal;
+using System.Threading;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Text;
@@ -15,9 +16,10 @@ namespace Pumpt
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool DestroyIcon(IntPtr hIcon);
 
+        private static Mutex singleInstanceMutex;
         private static NotifyIcon trayIcon;
         private static Computer computer;
-        private static Timer updateTimer;
+        private static System.Windows.Forms.Timer updateTimer;
 
         // Temperature values
         private static float currentCpuTemp = 0;
@@ -34,6 +36,20 @@ namespace Pumpt
         {
             try
             {
+                // Enforce single instance
+                bool createdNew;
+                singleInstanceMutex = new Mutex(true, "Pumpt_SingleInstance_Mutex", out createdNew);
+
+                if (!createdNew)
+                {
+                    MessageBox.Show(
+                        "Pumpt is already running. Check your system tray.",
+                        "Pumpt",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
                 if (!IsRunningAsAdministrator())
                 {
                     MessageBox.Show(
@@ -120,7 +136,7 @@ namespace Pumpt
 
         private static void SetupUpdateTimer()
         {
-            updateTimer = new Timer
+            updateTimer = new System.Windows.Forms.Timer
             {
                 Interval = 1000 // 1 second
             };
@@ -267,6 +283,9 @@ namespace Pumpt
             pumpDevice?.Dispose();
             trayIcon?.Dispose();
             computer?.Close();
+
+            singleInstanceMutex?.ReleaseMutex();
+            singleInstanceMutex?.Dispose();
         }
         [System.Runtime.Versioning.SupportedOSPlatform("windows")]
         private static bool IsRunningAsAdministrator()
