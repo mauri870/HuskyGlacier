@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Security.Principal;
 using LibreHardwareMonitor.Hardware;
 
 namespace Pumpt
@@ -8,6 +9,26 @@ namespace Pumpt
     {
         static void Main()
         {
+            // Check if running as administrator
+            if (!IsRunningAsAdministrator())
+            {
+                Console.WriteLine("═══════════════════════════════════════════════════════════════");
+                Console.WriteLine("                  ADMINISTRATOR RIGHTS REQUIRED                  ");
+                Console.WriteLine("═══════════════════════════════════════════════════════════════");
+                Console.WriteLine();
+                Console.WriteLine("This application requires administrator privileges to access");
+                Console.WriteLine("hardware sensors.");
+                Console.WriteLine();
+                Console.WriteLine("Please run this program as Administrator:");
+                Console.WriteLine("  1. Right-click on PowerShell");
+                Console.WriteLine("  2. Select 'Run as administrator'");
+                Console.WriteLine("  3. Navigate to this folder and run 'dotnet run'");
+                Console.WriteLine();
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey();
+                return;
+            }
+
             var computer = new Computer
             {
                 IsCpuEnabled = true,
@@ -36,6 +57,23 @@ namespace Pumpt
             finally
             {
                 computer?.Close();
+            }
+        }
+
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        private static bool IsRunningAsAdministrator()
+        {
+            try
+            {
+                using (var identity = WindowsIdentity.GetCurrent())
+                {
+                    var principal = new WindowsPrincipal(identity);
+                    return principal.IsInRole(WindowsBuiltInRole.Administrator);
+                }
+            }
+            catch
+            {
+                return false;
             }
         }
     }
