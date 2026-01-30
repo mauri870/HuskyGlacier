@@ -1,41 +1,97 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Principal;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Threading;
 using LibreHardwareMonitor.Hardware;
 
 namespace Pumpt
 {
     class Program
     {
+        private static NotifyIcon trayIcon;
+        private static Computer computer;
+        private static System.Windows.Forms.Timer updateTimer;
+        private static string currentTemp = "N/A";
+
+        [STAThread]
         static void Main()
         {
             // Check if running as administrator
             if (!IsRunningAsAdministrator())
             {
-                Console.WriteLine("═══════════════════════════════════════════════════════════════");
-                Console.WriteLine("                  ADMINISTRATOR RIGHTS REQUIRED                  ");
-                Console.WriteLine("═══════════════════════════════════════════════════════════════");
-                Console.WriteLine();
-                Console.WriteLine("This application requires administrator privileges to access");
-                Console.WriteLine("hardware sensors.");
-                Console.WriteLine();
-                Console.WriteLine("Please run this program as Administrator:");
-                Console.WriteLine("  1. Right-click on PowerShell");
-                Console.WriteLine("  2. Select 'Run as administrator'");
-                Console.WriteLine("  3. Navigate to this folder and run 'dotnet run'");
-                Console.WriteLine();
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey();
+                MessageBox.Show(
+                    "This application requires administrator privileges to access hardware sensors.\n\n" +
+                    "Please run this program as Administrator.",
+                    "Administrator Rights Required",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
 
-            var computer = new Computer
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            // Initialize hardware monitoring
+            InitializeHardwareMonitoring();
+
+            // Create system tray icon
+            CreateTrayIcon();
+
+            // Setup timer for temperature updates
+            SetupUpdateTimer();
+
+            // Initial temperature reading
+            UpdateTemperature();
+
+            // Run the application
+            Application.Run();
+
+            // Cleanup
+            Cleanup();
+        }
+
+        private static void InitializeHardwareMonitoring()
+        {
+            computer = new Computer
             {
                 IsCpuEnabled = true,
                 IsMotherboardEnabled = true
             };
             computer.Open();
+        }
 
+        private static void CreateTrayIcon()
+        {
+            trayIcon = new NotifyIcon()
+            {
+                Icon = SystemIcons.Application, // You can replace this with a custom icon
+                Visible = true,
+                Text = "CPU Temperature Monitor"
+            };
+
+            // Create context menu
+            var contextMenu = new ContextMenuStrip();
+            contextMenu.Items.Add("Close", null, OnClose);
+            trayIcon.ContextMenuStrip = contextMenu;
+        }
+
+        private static void SetupUpdateTimer()
+        {
+            updateTimer = new System.Windows.Forms.Timer();
+            updateTimer.Interval = 5000; // 5 seconds
+            updateTimer.Tick += OnTimerTick;
+            updateTimer.Start();
+        }
+
+        private static void OnTimerTick(object sender, EventArgs e)
+        {
+            UpdateTemperature();
+        }
+
+        private static void UpdateTemperature()
+        {
             try
             {
                 foreach (var hardware in computer.Hardware)
@@ -48,16 +104,35 @@ namespace Pumpt
                                (s.Name.Contains("Tctl") || s.Name.Contains("CPU")))?.Value;
 
                 if (cpuTemp.HasValue)
-                    Console.WriteLine($"CPU: {cpuTemp.Value:F1} °C");
+                {
+                    currentTemp = $"{cpuTemp.Value:F1} °C";
+                }
+                else
+                {
+                    currentTemp = "N/A";
+                }
+
+                // Update tray icon tooltip
+                trayIcon.Text = $"CPU: {currentTemp}";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                currentTemp = "Error";
+                trayIcon.Text = $"CPU Temperature Monitor - Error: {ex.Message}";
             }
-            finally
-            {
-                computer?.Close();
-            }
+        }
+
+        private static void OnClose(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private static void Cleanup()
+        {
+            updateTimer?.Stop();
+            updateTimer?.Dispose();
+            trayIcon?.Dispose();
+            computer?.Close();
         }
 
         [System.Runtime.Versioning.SupportedOSPlatform("windows")]
