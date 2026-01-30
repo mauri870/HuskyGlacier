@@ -3,8 +3,8 @@ using System.Linq;
 using System.Security.Principal;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using HidLibrary;
 
@@ -12,6 +12,9 @@ namespace Pumpt
 {
     class Program
     {
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool DestroyIcon(IntPtr hIcon);
+
         private static NotifyIcon trayIcon;
         private static Computer computer;
         private static Timer updateTimer;
@@ -30,7 +33,6 @@ namespace Pumpt
         {
             try
             {
-                // Check if running as administrator
                 if (!IsRunningAsAdministrator())
                 {
                     MessageBox.Show(
@@ -104,7 +106,7 @@ namespace Pumpt
         {
             trayIcon = new NotifyIcon()
             {
-                Icon = LoadIconFromResource() ?? SystemIcons.Application,
+                Icon = CreateTempIcon("--", Color.Gray, 11, "Segoe UI"),
                 Visible = true,
                 Text = "Pumpt - Initializing..."
             };
@@ -153,11 +155,23 @@ namespace Pumpt
 
                 displayTemp = $"CPU: {currentCpuTemp:F0}°C";
                 trayIcon.Text = displayTemp;
+
+                // Update icon with current temperature and color
+                var oldIcon = trayIcon.Icon;
+                string tempText = $"{currentCpuTemp:F0}";
+                Color tempColor = GetTempColor(currentCpuTemp);
+                trayIcon.Icon = CreateTempIcon(tempText, tempColor, 11, "Segoe UI");
+                oldIcon?.Dispose();
             }
             catch (Exception ex)
             {
                 displayTemp = "Error reading temperatures";
                 trayIcon.Text = $"Pumpt - Error: {ex.Message}";
+
+                // Show error icon
+                var oldIcon = trayIcon.Icon;
+                trayIcon.Icon = CreateTempIcon("!!", Color.Red, 11, "Segoe UI");
+                oldIcon?.Dispose();
             }
         }
 
@@ -199,18 +213,40 @@ namespace Pumpt
             trayIcon?.ShowBalloonTip(3000, title, message, icon);
         }
 
-        private static Icon LoadIconFromResource()
+        private static Icon CreateTempIcon(string text, Color color, float baseFontSize, string fontFamily)
         {
-            try
+            Size iconSize = System.Windows.Forms.SystemInformation.SmallIconSize;
+
+            using var bmp = new Bitmap(iconSize.Width, iconSize.Height);
+            using var g = Graphics.FromImage(bmp);
+            float dpiScale = g.DpiX / 96f;
+            float scaledFontSize = baseFontSize * dpiScale;
+
+            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            g.Clear(Color.Transparent);
+
+            using var font = new Font(fontFamily, scaledFontSize, FontStyle.Bold, GraphicsUnit.Pixel);
+            SizeF textSize = g.MeasureString(text, font);
+            float x = (iconSize.Width - textSize.Width) / 2;
+            float y = (iconSize.Height - textSize.Height) / 2 + (dpiScale * 0.5f);
+
+            using (var brush = new SolidBrush(color))
             {
-                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                using var stream = assembly.GetManifestResourceStream("Pumpt.icon.ico");
-                return stream != null ? new Icon(stream) : null;
+                g.DrawString(text, font, brush, new PointF(x, y));
             }
-            catch
-            {
-                return null;
-            }
+
+            IntPtr hIcon = bmp.GetHicon();
+            Icon newIcon = (Icon)Icon.FromHandle(hIcon).Clone();
+            DestroyIcon(hIcon);
+            return newIcon;
+        }
+
+        private static Color GetTempColor(float temp)
+        {
+            if (temp <= 60) return Color.LimeGreen;
+            if (temp <= 75) return Color.Yellow;
+            if (temp <= 90) return Color.OrangeRed;
+            return Color.DarkRed;
         }
 
         private static void Cleanup()
