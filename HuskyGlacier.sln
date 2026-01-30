@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pumpt", "Pumpt.csproj", "{8F0E597B-1C1A-002C-6E78-407C6930F241}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HuskyGlacier", "HuskyGlacier.csproj", "{8F0E597B-1C1A-002C-6E78-407C6930F241}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

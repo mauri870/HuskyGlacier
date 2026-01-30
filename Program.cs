@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using LibreHardwareMonitor.Hardware;
 using HidLibrary;
 
-namespace Pumpt
+namespace HuskyGlacier
 {
     class Program
     {
@@ -42,13 +42,13 @@ namespace Pumpt
             {
                 // Enforce single instance
                 bool createdNew;
-                singleInstanceMutex = new Mutex(true, "Pumpt_SingleInstance_Mutex", out createdNew);
+                singleInstanceMutex = new Mutex(true, "HuskyGlacier_SingleInstance_Mutex", out createdNew);
 
                 if (!createdNew)
                 {
                     MessageBox.Show(
-                        "Pumpt is already running. Check your system tray.",
-                        "Pumpt",
+                        "HuskyGlacier is already running. Check your system tray.",
+                        "HuskyGlacier",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
                     return;
@@ -59,7 +59,7 @@ namespace Pumpt
                     MessageBox.Show(
                         "This application requires administrator privileges to access hardware sensors.\n\n" +
                         "Please run this program as Administrator.",
-                        "Pumpt",
+                        "HuskyGlacier",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
                     return;
@@ -84,7 +84,7 @@ namespace Pumpt
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Fatal error: {ex.Message}", "Pumpt - Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Fatal error: {ex.Message}", "HuskyGlacier - Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -138,7 +138,7 @@ namespace Pumpt
             {
                 Icon = CreateTempIcon("--", Color.Gray, 11, "Segoe UI"),
                 Visible = true,
-                Text = "Pumpt - Initializing..."
+                Text = "HuskyGlacier - Initializing..."
             };
 
             // Create context menu
@@ -171,7 +171,7 @@ namespace Pumpt
                 if (cpuTempSensor?.Value is float temp)
                     currentCpuTemp = temp;
 
-                displayTemp = $"CPU: {currentCpuTemp:F0}°C";
+                displayTemp = $"HuskyGlacier - CPU: {currentCpuTemp:F0}°C";
                 trayIcon.Text = displayTemp;
 
                 // Only update icon if temperature changed by at least 1 degree
@@ -188,7 +188,7 @@ namespace Pumpt
             catch (Exception ex)
             {
                 displayTemp = "Error reading temperatures";
-                trayIcon.Text = $"Pumpt - Error: {ex.Message}";
+                trayIcon.Text = $"HuskyGlacier - Error: {ex.Message}";
             }
         }
 
