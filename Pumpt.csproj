@@ -10,4 +10,8 @@
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.5-pre582" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="icon.ico" />
+  </ItemGroup>
+
 </Project>

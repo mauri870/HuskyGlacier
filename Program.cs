@@ -66,7 +66,7 @@ namespace Pumpt
         {
             trayIcon = new NotifyIcon()
             {
-                Icon = SystemIcons.Application, // You can replace this with a custom icon
+                Icon = LoadIconFromResource() ?? SystemIcons.Application,
                 Visible = true,
                 Text = "CPU Temperature Monitor"
             };
@@ -125,6 +125,22 @@ namespace Pumpt
         private static void OnClose(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+
+        private static Icon LoadIconFromResource()
+        {
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using (var stream = assembly.GetManifestResourceStream("Pumpt.icon.ico"))
+                {
+                    return stream != null ? new Icon(stream) : null;
+                }
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static void Cleanup()
