@@ -29,9 +29,8 @@ Requires **.NET 10.0 SDK**:
 dotnet run
 
 # Build self-contained executable with .NET runtime
-dotnet publish --self-contained
+dotnet publish
 
 # Build packaged zip in 'package' folder
 dotnet build -t:Package
 ```
-
