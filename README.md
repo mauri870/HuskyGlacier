@@ -12,7 +12,7 @@ I have only tested the driver with the **HWT700PT (360 mm)** model, but the **HW
 
 ## Running
 
-Download a compiled version from the releases page, or build it yourself. It requires administrative privileges to gather sensor data.
+Download a compiled version from the releases page, or build it yourself. It requires administrative privileges to gather sensor data and [**.NET 10 Desktop Runtime**](https://dotnet.microsoft.com/en-us/download/dotnet) installed.
 
 To run the app automatically when Windows starts:
 
@@ -20,17 +20,13 @@ To run the app automatically when Windows starts:
 2. Create a new task.
 3. Set it to **run with highest privileges**.
 4. Trigger it **"At log on"** for your user.
-5. Point the task to the app's executable.
-
-Requires **.NET 10.0 SDK**:
+5. Point the task to the app's executable
 
 ```powershell
 # Run in development mode
 dotnet run
 
-# Build self-contained executable with .NET runtime
-dotnet publish
-
 # Build packaged zip in 'package' folder
-dotnet build -t:Package
+dotnet publish -t:Package
 ```
+
