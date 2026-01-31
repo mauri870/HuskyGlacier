@@ -30,7 +30,7 @@ namespace HuskyGlacier
         private static float previousCpuTemp = -1; // Track previous temp to avoid unnecessary icon updates
         private static string displayTemp = "N/A";
 
-        // Device VID and PID for Husky Glacier cooler
+        // Device VID and PID for Husky Glacier HWT700PT pump
         private static readonly int PUMPVID = 0xAA88;
         private static readonly int PUMPPID = 0x8666;
         private static HidDevice pumpDevice;
@@ -294,4 +294,5 @@ namespace HuskyGlacier
             }
         }
     }
+
 }
