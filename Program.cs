@@ -93,7 +93,14 @@ namespace HuskyGlacier
             computer = new Computer
             {
                 IsCpuEnabled = true,
-                IsMotherboardEnabled = true
+                IsStorageEnabled = false,
+                IsPsuEnabled = false,
+                IsNetworkEnabled = false,
+                IsMotherboardEnabled = false,
+                IsMemoryEnabled = false,
+                IsGpuEnabled = false,
+                IsControllerEnabled = false,
+                IsBatteryEnabled = false
             };
             computer.Open();
 
@@ -296,3 +303,4 @@ namespace HuskyGlacier
     }
 
 }
+
