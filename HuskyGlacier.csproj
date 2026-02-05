@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="hidlibrary" Version="3.3.40" />
-    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.5-pre582" />
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6-pre624" />
   </ItemGroup>
 
   <Target Name="Package" DependsOnTargets="Publish">
