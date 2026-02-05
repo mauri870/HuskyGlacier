@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading;
@@ -13,6 +14,10 @@ namespace HuskyGlacier
 {
     class Program
     {
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetProcessInformation(IntPtr hProcess, int ProcessInformationClass,
+            IntPtr ProcessInformation, uint ProcessInformationSize);
+
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool DestroyIcon(IntPtr hIcon);
 
@@ -68,6 +73,8 @@ namespace HuskyGlacier
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
+                EnableEfficiencyMode();
+
                 InitializeHardwareMonitoring();
 
                 InitializeHidDevice();
@@ -86,6 +93,37 @@ namespace HuskyGlacier
             {
                 MessageBox.Show($"Fatal error: {ex.Message}", "HuskyGlacier - Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PROCESS_POWER_THROTTLING_STATE
+        {
+            public uint Version;
+            public uint ControlMask;
+            public uint StateMask;
+        }
+
+        private static void EnableEfficiencyMode()
+        {
+            const int ProcessPowerThrottling = 4;
+            const uint PROCESS_POWER_THROTTLING_CURRENT_VERSION = 1;
+            const uint PROCESS_POWER_THROTTLING_EXECUTION_SPEED = 0x1;
+
+            using var currentProcess = Process.GetCurrentProcess();
+            currentProcess.PriorityClass = ProcessPriorityClass.Idle;
+
+            int sz = Marshal.SizeOf<PROCESS_POWER_THROTTLING_STATE>();
+            PROCESS_POWER_THROTTLING_STATE PwrInfo = new()
+            {
+                Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+                ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
+                StateMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED
+            };
+            nint PwrInfoPtr = Marshal.AllocHGlobal(sz);
+            Marshal.StructureToPtr(PwrInfo, PwrInfoPtr, false);
+            IntPtr handle = currentProcess.Handle;
+            bool r = SetProcessInformation(handle, ProcessPowerThrottling, PwrInfoPtr, (uint)sz);
+            Marshal.FreeHGlobal(PwrInfoPtr);
         }
 
         private static void InitializeHardwareMonitoring()
@@ -303,4 +341,3 @@ namespace HuskyGlacier
     }
 
 }
-
