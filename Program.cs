@@ -27,7 +27,6 @@ namespace HuskyGlacier
         private static System.Windows.Forms.Timer updateTimer;
 
         // Cache CPU sensor once
-        private static ISensor cpuTempSensor;
         private static IHardware cpuHardware;
 
         // Temperature values
@@ -82,8 +81,6 @@ namespace HuskyGlacier
                 CreateTrayIcon();
 
                 SetupUpdateTimer();
-
-                UpdateTemperatures();
 
                 Application.Run();
 
@@ -144,12 +141,6 @@ namespace HuskyGlacier
 
             cpuHardware = computer.Hardware
                 .FirstOrDefault(h => h.HardwareType == HardwareType.Cpu);
-
-            cpuHardware?.Update();
-
-            cpuTempSensor = cpuHardware?.Sensors
-                .FirstOrDefault(s => s.SensorType == SensorType.Temperature &&
-                                     (s.Name.Contains("Tctl") || s.Name.Contains("CPU")));
         }
 
         private static void InitializeHidDevice()
@@ -194,6 +185,7 @@ namespace HuskyGlacier
 
         private static void SetupUpdateTimer()
         {
+            OnTimerTick(null, null); // Initial update
             updateTimer = new System.Windows.Forms.Timer
             {
                 Interval = 1000 // 1 second
@@ -204,37 +196,55 @@ namespace HuskyGlacier
 
         private static void OnTimerTick(object sender, EventArgs e)
         {
-            UpdateTemperatures();
+            if (UpdateTemperatures())
+            {
+                DrawTemperature();
+            }
             SendTemperatureToPump();
         }
 
-        private static void UpdateTemperatures()
+        private static bool UpdateTemperatures()
         {
             try
             {
                 cpuHardware?.Update();
+                foreach (var sensor in cpuHardware?.Sensors)
+                {
+                    sensor.ClearValues();
+                    sensor.ValuesTimeWindow = TimeSpan.Zero;
+                }
+
+                var cpuTempSensor = cpuHardware?.Sensors
+                    .FirstOrDefault(s => s.SensorType == SensorType.Temperature &&
+                                         (s.Name.Contains("Tctl") || s.Name.Contains("CPU")));
+
                 if (cpuTempSensor?.Value is float temp)
                     currentCpuTemp = temp;
 
-                displayTemp = $"HuskyGlacier - CPU: {currentCpuTemp:F0}°C";
-                trayIcon.Text = displayTemp;
-
-                // Only update icon if temperature changed by at least 1 degree
-                if (Math.Abs(currentCpuTemp - previousCpuTemp) >= 1.0f)
+                if (Math.Abs(currentCpuTemp - previousCpuTemp) < 1.0f)
                 {
-                    var oldIcon = trayIcon.Icon;
-                    string tempText = $"{currentCpuTemp:F0}";
-                    Color tempColor = GetTempColor(currentCpuTemp);
-                    trayIcon.Icon = CreateTempIcon(tempText, tempColor, 11, "Segoe UI");
-                    oldIcon?.Dispose();
-                    previousCpuTemp = currentCpuTemp;
+                    return false;
                 }
+
+                previousCpuTemp = currentCpuTemp;
             }
             catch (Exception ex)
             {
                 displayTemp = "Error reading temperatures";
                 trayIcon.Text = $"HuskyGlacier - Error: {ex.Message}";
             }
+            return true;
+        }
+
+        private static void DrawTemperature()
+        {
+            string tempText = $"{currentCpuTemp:F0}";
+            Color tempColor = GetTempColor(currentCpuTemp);
+            var oldIcon = trayIcon.Icon;
+            trayIcon.Icon = CreateTempIcon(tempText, tempColor, 11, "Segoe UI");
+            trayIcon.Text = displayTemp;
+            displayTemp = $"HuskyGlacier - CPU: {currentCpuTemp:F0}°C";
+            oldIcon?.Dispose();
         }
 
         private static void SendTemperatureToPump()
