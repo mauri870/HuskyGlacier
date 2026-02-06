@@ -256,8 +256,8 @@ namespace HuskyGlacier
             Color tempColor = GetTempColor(currentCpuTemp);
             var oldIcon = trayIcon.Icon;
             trayIcon.Icon = CreateTempIcon(tempText, tempColor, 11, "Segoe UI");
-            trayIcon.Text = displayTemp;
             displayTemp = $"HuskyGlacier - CPU: {currentCpuTemp:F0}°C";
+            trayIcon.Text = displayTemp;
             oldIcon?.Dispose();
         }
 
