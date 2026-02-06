@@ -34,6 +34,9 @@ namespace HuskyGlacier
         private static float previousCpuTemp = -1; // Track previous temp to avoid unnecessary icon updates
         private static string displayTemp = "N/A";
 
+        // Re-entrancy guard for timer tick
+        private static bool isTimerTickExecuting = false;
+
         // Device VID and PID for Husky Glacier HWT700PT pump
         private static readonly int PUMPVID = 0xAA88;
         private static readonly int PUMPPID = 0x8666;
@@ -196,11 +199,22 @@ namespace HuskyGlacier
 
         private static void OnTimerTick(object sender, EventArgs e)
         {
-            if (UpdateTemperatures())
+            if (isTimerTickExecuting)
+                return;
+
+            isTimerTickExecuting = true;
+            try
             {
-                DrawTemperature();
+                if (UpdateTemperatures())
+                {
+                    DrawTemperature();
+                }
+                SendTemperatureToPump();
             }
-            SendTemperatureToPump();
+            finally
+            {
+                isTimerTickExecuting = false;
+            }
         }
 
         private static bool UpdateTemperatures()
