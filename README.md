@@ -1,5 +1,7 @@
 # Husky Glacier HWT700PT Driver
 
+> For the Linux version check out https://github.com/mauri870/husky-glacier-linux.
+
 ## Overview
 
 The [official HKCF300 | HCF300 driver](https://drive.google.com/file/d/1h8q4DvG9Mrbzw4FKTSndB5N1Rydi-l0O/view) for the **Husky Glacier HWT700PT** water-cooler is outdated, relies on a kernel `.sys` driver, and has known security vulnerabilities. Recently, Windows Defender started flagging it more aggressively. On top of that, it consumes nearly **200 MB of RAM** while running.
@@ -29,4 +31,5 @@ dotnet run
 # Build packaged zip in 'package' folder
 dotnet publish -t:Package
 ```
+
 
