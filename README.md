@@ -12,6 +12,8 @@ The app integrates LibreHardwareMonitor to provide accurate CPU temperature read
 
 I have only tested the driver with the **HWT700PT (360 mm)** model, but the **HW600PT (240 mm)** may also work. The `HKCF300 | HCF300 driver` is used by other models such as the `Ice Comet`, so they might work out of the box. If they don't, support may be as simple as figuring out the correct USB Vendor ID and Product ID for your model, updating the source code, and recompiling it yourself.
 
+For instance, my pump is reported with the USB Vendor ID and Product ID `aa88:8666 铭研科技 温度显示HID设备`.
+
 ## Running
 
 Download a compiled version from the releases page, or build it yourself. It requires administrative privileges to gather sensor data and [**.NET 10 Desktop Runtime**](https://dotnet.microsoft.com/en-us/download/dotnet) installed.
